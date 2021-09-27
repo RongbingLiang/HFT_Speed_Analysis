@@ -5,12 +5,12 @@ Created on Sat Sep 25 22:44:41 2021
 @author: Robyn
 """
 
-import pandas as pd
+import time
+
 import numpy as np
-import time 
-from datetime import datetime
+import pandas as pd
 from tqdm.auto import tqdm
-from numba import jit,int8,float32,float64
+
 tqdm.pandas()
 
 
@@ -35,11 +35,7 @@ def clean_order_book(order_book,time_slice=('09:40','15:50'),freq='100ms'):
 
     return order_book_df
 
-
-
-
-    
-"sample signal functions"
+"signal related"
 def cal_time_weighted_MA2(order_book,ChnLen):
     """Compute time weighted moving-average mid quote price, as base time-series data for signal generation process
     
@@ -108,7 +104,32 @@ def cal_time_weighted_MA(order_book,ChnLen,base_freq='100ms'):
     return TWMA_ts
 
 
+def cal_time_weighted_MP(order_book, ChnLen, base_freq='100ms'):
+    """Compute time weighted moving-average return, as base time-series data for signal generation process
 
+    Parameters
+    ----------
+    order_book : data frame with timeindex
+        order book data, contains mid quote price, key=['mid_quote']
+    ChnLen : pandas time offset
+        Look back window.
+    base_freq:
+        the frequency of the order_book. default 100ms
+    Returns
+    -------
+    TWMA : ts
+        periodic (not rolloing) time weighted mid quote price .
+
+    """
+    base_offset=pd.tseries.frequencies.to_offset(base_freq)
+    window_len=int(ChnLen.nanos/base_offset.nanos)
+
+    order_book = order_book.copy()
+    order_book['ret'] = order_book['mid_price'].pct_change()
+    TWMP_ts = order_book['ret'].rolling(window_len).mean()
+    TWMP_ts.name = 'TWMP'
+
+    return TWMP_ts
 
 def ma_trading_rule(base_data_i,b):
     signal=0
@@ -436,33 +457,6 @@ print(trade_detail_df.head())
         
         
         
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
