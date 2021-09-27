@@ -57,22 +57,6 @@ for ticker in ticker_list:
 
 #%%
 
-def twma_func(ts):
-    n=len(ts)
-    twma=np.nan
-    if n>1:
-        time_delta=pd.Series(np.diff(ts.index.asi8)/(10**3))
-        if np.sum(time_delta)>0:
-            twma=np.average(ts.iloc[:-1],weights=time_delta)
-    return twma
-
-def cal_twma_on_day(daily_df,ChnLen):
-        
-
-    twma_ts_tmp=daily_df['mid_quote'].rolling(ChnLen).apply(twma_func)
-    
-    return twma_ts_tmp
-
 
     
 
@@ -92,6 +76,22 @@ def cal_time_weighted_MA2(order_book,ChnLen):
         periodic (not rolloing) time weighted mid quote price .
 
     """        
+    
+    def twma_func(ts):
+        n=len(ts)
+        twma=np.nan
+        if n>1:
+            time_delta=pd.Series(np.diff(ts.index.asi8)/(10**3))
+            if np.sum(time_delta)>0:
+                twma=np.average(ts.iloc[:-1],weights=time_delta)
+        return twma
+    
+    def cal_twma_on_day(daily_df,ChnLen):
+            
+    
+        twma_ts_tmp=daily_df['mid_quote'].rolling(ChnLen).apply(twma_func)
+        
+        return twma_ts_tmp
 
     
     daily_groupby=order_book.groupby(order_book.index.date,as_index=False,group_keys=False)
@@ -135,7 +135,7 @@ ticker=ticker_list[i]
 order_book=tot_order_book_dict[ticker]
 daily_groupby=order_book.resample('D')
 print(daily_groupby.groups)
-#%%
+
 
 date_range=list(daily_groupby.groups.keys())
 print(date_range)
@@ -147,41 +147,41 @@ ChnLen_s=pd.offsets.Second(30*2)
 
 b=0.0005
 tmp=order_book_tmp.head(10000)
-print(order_book_tmp.index.freq)
+
 #%%
 base_data=pd.DataFrame()
 t0=time.time()
-base_data['twma_l']=cal_time_weighted_MA(order_book_tmp, ChnLen_l)
+base_data['twma_l']=cal_time_weighted_MA(order_book_tmp, ChnLen_l,freq)
 
 print('cost time:' ,(time.time()-t0)/60)
 
 #%%
 t0=time.time()
-base_data['twma_s']=cal_time_weighted_MA(order_book_tmp, ChnLen_s)
+base_data['twma_s']=cal_time_weighted_MA(order_book_tmp, ChnLen_s,freq)
 
 print('cost time:' ,(time.time()-t0)/60)
 
 #%%
 
-base_data=pd.DataFrame()
-base_data['ma_s']=twma_s
-base_data['ma_l']=twma_l
+def ma_trading_rule(base_data_i,b):
+    signal=0
+    ma_s=base_data_i['twma_s']
+    ma_l=base_data_i['twma_l']
+    if ma_s>(1+b)*ma_l:
+        signal=1
+    elif ma_s<(1-b)*ma_l:
+        signal=-1
+    
+    return signal 
+    
+
+
+
+signal_ts=base_data.apply(lambda df: ma_trading_rule(df,b),axis=1)
+
+
 
 #%%
-N=len(order_book)
-signal_arr=base_data.apply(lamba)
-
-
-
-
-#%%
-print()
-
-
-
-
-
-
 
 
 
