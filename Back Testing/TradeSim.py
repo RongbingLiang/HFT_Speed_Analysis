@@ -101,8 +101,6 @@ class DailyTradeSettle():
         return params_dict
 
 
-
-
     def simple_tradesim(self,signal_ts,eval_freq=pd.offsets.Second(30)):
         """Compute simple return based on a fixed initial capital,
             return trade detail and snapshot real equity value.
@@ -158,7 +156,8 @@ class DailyTradeSettle():
         #equity value is your true account market value
         equity_value=capital
         print('has any signal: ',np.any(signal_arr!=0))
-
+        #real cum pnl, not market value
+        cum_pnl=0
         for i in range(wait_bar,tot_bar):
             cur_time=dt_list[i]
             lag_loc=i-delay_bar
@@ -184,7 +183,9 @@ class DailyTradeSettle():
                     #record entry time, price-impact price,trade_size
                     trade_record_list=[cur_time,trade_size,used_depth,mkt_pos,entry_price]
                 if check_value:
-                    market_value_list.append([cur_time.floor('s'),equity_value])
+                    mkt_time=mkt_time+eval_freq
+                    market_value_list.append([mkt_time.floor('s'),equity_value])
+                    
                                     
 
             elif mkt_pos==1:
@@ -196,7 +197,9 @@ class DailyTradeSettle():
                     pnl=trade_value-capital
                     simple_return=(exit_price-entry_price)/entry_price
                     mkt_pos=0
-                    equity_value+=pnl
+                    'reset equit value by real cum pnl'
+                    cum_pnl+=pnl
+                    equity_value=capital+cum_pnl
                     #record exit time, used depth, exit price, real profit,simple return, complet a round trip
                     trade_record_list.extend([cur_time,used_depth,exit_price,pnl,simple_return])
                     trade_detail_list.append(trade_record_list)
@@ -205,9 +208,10 @@ class DailyTradeSettle():
                     #check market value, do not exit
                     bid_size_arr=bid_size_mat[i,:]
                     bid_price_arr=bid_price_mat[i,:]
-                    used_depth,exit_price,trade_value=get_PriceImpact_price(bid_price_arr,bid_size_arr,position=trade_size)
-                    pnl=trade_value-capital
-                    equity_value+=pnl
+                    fake_pnl=bid_price_arr[0]*trade_size-capital
+                    equity_value+=fake_pnl
+                    
+                    mkt_time=mkt_time+eval_freq
                     market_value_list.append([cur_time.floor('s'),equity_value])
                 
 
@@ -221,7 +225,8 @@ class DailyTradeSettle():
 
                     simple_return=-(exit_price-entry_price)/entry_price
                     mkt_pos=0
-                    equity_value+=pnl
+                    cum_pnl+=pnl
+                    equity_value=capital+cum_pnl
                     #record exit time, used depth, exit price, real profit,simple return, complet a round trip
                     trade_record_list.extend([cur_time,used_depth,exit_price,pnl,simple_return])
                     trade_detail_list.append(trade_record_list)
@@ -229,10 +234,10 @@ class DailyTradeSettle():
                     #check market value, do not exit
                     ask_size_arr=ask_size_mat[i,:]
                     ask_price_arr=ask_price_mat[i,:]
-                    used_depth,exit_price,trade_value=get_PriceImpact_price(ask_price_arr,ask_size_arr,position=trade_size)
-                    pnl=capital-trade_value
+                    fake_pnl=capital-ask_price_arr[0]*trade_size                 
+                    equity_value+=fake_pnl
                     
-                    equity_value+=pnl
+                    mkt_time=mkt_time+eval_freq
                     market_value_list.append([cur_time.floor('s'),equity_value])
                 
                 
@@ -245,3 +250,5 @@ class DailyTradeSettle():
         tradesim_res={'trade_detail':trade_detail_df,'equity':equity_df}
         print('cost time:' ,(time.time()-t0)/60)
         return tradesim_res
+
+            
