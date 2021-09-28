@@ -142,7 +142,7 @@ class DailyTradeSettle():
         signal_arr=np.array(signal_ts)
         #set the last wait bar signal =0 so we will exit at the end of the day
         signal_arr[-(wait_bar+1):]=0 
-        print('wait bar: ',wait_bar)
+        #print('wait bar: ',wait_bar)
         if tot_bar!=bid_size_mat.shape[0] or (wait_bar)>=tot_bar-1:
             raise ValueError("The length of signal time series is not equal to the length of the order book!")
 
@@ -247,10 +247,10 @@ class DailyTradeSettle():
         trade_detail_df=pd.DataFrame(trade_detail_list,columns=trade_col)
         equity_df=pd.DataFrame(market_value_list,columns=['Time','equity'])
         equity_df.set_index('Time',inplace=True)
-        print("%s has %d number of trades."%(dt_list[0],len(trade_detail_df)))
+        print("%s has %d number of trades."%(dt_list[0].date,len(trade_detail_df)))
         print('Total return: ',np.round(equity_value/capital-1,4))
         tradesim_res={'trade_detail':trade_detail_df,'equity':equity_df}
-        print('cost time:' ,(time.time()-t0)/60)
+        #print('cost time:' ,(time.time()-t0)/60)
         return tradesim_res
 
             
