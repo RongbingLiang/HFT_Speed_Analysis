@@ -150,11 +150,12 @@ class DailyTradeSettle():
         dt_list=self.dt_list
         mkt_time=dt_list[0].floor('s')
         #used to construct equity curve within a day
-        market_value_list=[[mkt_time,capital]]
+        market_value_list=[[mkt_time,capital,0,bid_price_mat[0,0],ask_price_mat[0,0]]]
         trade_detail_list=[]
         mkt_pos=0
         #equity value is your true account market value
         equity_value=capital
+        print(dt_list[0].date())
         print('has any signal: ',np.any(signal_arr!=0))
         #real cum pnl, not market value
         cum_pnl=0
@@ -184,7 +185,7 @@ class DailyTradeSettle():
                     trade_record_list=[cur_time,trade_size,used_depth,mkt_pos,entry_price]
                 if check_value:
                     mkt_time=mkt_time+eval_freq
-                    market_value_list.append([mkt_time.floor('s'),equity_value])
+                    market_value_list.append([mkt_time.floor('s'),equity_value,0,bid_price_mat[i,0],ask_price_mat[i,0]])
                     
                                     
 
@@ -196,6 +197,7 @@ class DailyTradeSettle():
                     used_depth,exit_price,trade_value=get_PriceImpact_price(bid_price_arr,bid_size_arr,position=trade_size)
                     pnl=trade_value-capital
                     simple_return=(exit_price-entry_price)/entry_price
+                    'reset trade size and market position'
                     mkt_pos=0
                     'reset equit value by real cum pnl'
                     cum_pnl+=pnl
@@ -204,7 +206,7 @@ class DailyTradeSettle():
                     trade_record_list.extend([cur_time,used_depth,exit_price,pnl,simple_return])
                     trade_detail_list.append(trade_record_list)
 
-                if check_value:
+                if check_value and mkt_pos==1:
                     #check market value, do not exit
                     bid_size_arr=bid_size_mat[i,:]
                     bid_price_arr=bid_price_mat[i,:]
@@ -212,7 +214,7 @@ class DailyTradeSettle():
                     fake_equity_value=equity_value+fake_pnl
                     
                     mkt_time=mkt_time+eval_freq
-                    market_value_list.append([cur_time.floor('s'),fake_equity_value])
+                    market_value_list.append([cur_time.floor('s'),fake_equity_value,trade_size,bid_price_mat[i,0],ask_price_mat[i,0]])
                 
 
             elif mkt_pos==-1:
@@ -230,7 +232,7 @@ class DailyTradeSettle():
                     #record exit time, used depth, exit price, real profit,simple return, complet a round trip
                     trade_record_list.extend([cur_time,used_depth,exit_price,pnl,simple_return])
                     trade_detail_list.append(trade_record_list)
-                if check_value:
+                if check_value and mkt_pos==-1:
                     #check market value, do not exit
                     ask_size_arr=ask_size_mat[i,:]
                     ask_price_arr=ask_price_mat[i,:]
@@ -238,17 +240,17 @@ class DailyTradeSettle():
                     fake_equity_value=equity_value+fake_pnl
                     
                     mkt_time=mkt_time+eval_freq
-                    market_value_list.append([cur_time.floor('s'),fake_equity_value])
+                    market_value_list.append([cur_time.floor('s'),fake_equity_value,trade_size,bid_price_mat[i,0],ask_price_mat[i,0]])
                 
         if cur_time.floor('s')>mkt_time:
-            market_value_list.append([cur_time.floor('s'),equity_value])
+            market_value_list.append([cur_time.floor('s'),equity_value,0,bid_price_mat[i,0],ask_price_mat[i,0]])
             
         trade_col=['entry_time','trade_size','entry_depth','sign','entry_price','exit_time','exit_depth','exit_price','profit','simple_ret']
         trade_detail_df=pd.DataFrame(trade_detail_list,columns=trade_col)
-        equity_df=pd.DataFrame(market_value_list,columns=['Time','equity'])
+        equity_df=pd.DataFrame(market_value_list,columns=['Time','equity','pos_size','bid_price1','ask_price1'])
         equity_df.set_index('Time',inplace=True)
         #print("%s has %d number of trades."%(dt_list[0],len(trade_detail_df)))
-        print('Total return: ',np.round(equity_value/capital-1,4))
+        print('Day return: ',np.round(equity_value/capital-1,4))
         tradesim_res={'trade_detail':trade_detail_df,'equity':equity_df}
         #print('cost time:' ,(time.time()-t0)/60)
         return tradesim_res

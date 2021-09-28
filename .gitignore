@@ -1,4 +1,6 @@
 Data/GOOG_order_book.csv
 Data/YELP_order_book.csv
+Data/QQQQ_order_book.csv
+Data/*.csv
 test.py
 **/__pycache__

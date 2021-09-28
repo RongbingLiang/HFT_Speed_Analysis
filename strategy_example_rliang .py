@@ -21,160 +21,6 @@ from Strategy.signal_rongbin import *
 
 
 
-#%%
-
-def cal_rolling_max_midquote(daily_order_book,ChnLen,base_freq='100ms'):
-    """Compute rolling highest mid quote price for a signal day 
-    as base time-series data for signal generation process
-    
-    Parameters
-    ----------
-    daily order_book : data frame with timeindex
-        order book data of a day, contains mid quote price, key=['mid_quote']
-    ChnLen : pandas time offset
-        Look back window.
-    base_freq:
-        the frequency of the order_book. default 100ms
-    Returns
-    -------
-    rolling_max_ts : ts
-        rolling max mid quote price .
-
-    """        
-    base_offset=pd.tseries.frequencies.to_offset(base_freq)
-    window_len=int(ChnLen.nanos/base_offset.nanos)
-    rolling_max_ts=daily_order_book.rolling(window_len)['mid_quote'].max()
-    rolling_max_ts.name='rolling_max'
-
-    return rolling_max_ts
-
-
-def cal_rolling_min_midquote(daily_order_book,ChnLen,base_freq='100ms'):
-    """Compute rolling lowest mid quote price for a signal day 
-    as base time-series data for signal generation process
-    
-    Parameters
-    ----------
-    daily order_book : data frame with timeindex
-        order book data of a day, contains mid quote price, key=['mid_quote']
-    ChnLen : pandas time offset
-        Look back window.
-    base_freq:
-        the frequency of the order_book. default 100ms
-    Returns
-    -------
-    rolling_min_ts : ts
-        rolling min mid quote price .
-
-
-    """        
-    base_offset=pd.tseries.frequencies.to_offset(base_freq)
-    window_len=int(ChnLen.nanos/base_offset.nanos)
-    rolling_min_ts=daily_order_book.rolling(window_len)['mid_quote'].min()
-    rolling_min_ts.name='rolling_min'
-
-    return rolling_min_ts
-
-
-@jit(nopython=True)
-def CB_StrategyCore(HH,LL,mid_quote_arr,signal_arr,StpPct,Filter=0,WaitBar=1):
-    """The core of Channel breakout trading Strategy, seperated for accelerating speed by using jit.  
-    All parameters need to be passed.
-    Parameters
-    ---------
-    HH : arr
-        highest mid quote.
-    LL : arr
-        lowest mid quote.
-    mid_quote_arr : TYPE, optional
-        mid quote price. 
-    signal_arr : TYPE, optional
-        signal_arr. 
-    StpPct : TYPE
-        stop loss pct.
-    Filter:
-        0
-    WaitBar : [type], optional
-            bar wait to trade, by default 1
-    Returns
-    -------
-    None.
-
-    """
-    
-    state=0
-    PrevPeak=0
-    PrevTrough=0
-    data_length=len(mid_quote_arr)
-    
-    for i in range(WaitBar,data_length):
-        if state==0:
-            #Long enter
-            if mid_quote_arr[i]>=(1+Filter)*HH[i]:
-                state=1
-                PrevPeak=mid_quote_arr[i]
-            #Short enter
-            elif mid_quote_arr[i]<=(1-Filter)*LL[i]:
-                state=-1
-                PrevTrough=mid_quote_arr[i]
-        # in long position
-        elif state>0:
-            if mid_quote_arr[i]>PrevPeak:
-                PrevPeak=mid_quote_arr[i]
-            elif mid_quote_arr[i]<=PrevPeak*(1-StpPct):
-                state=0
-        
-        elif state<0:
-            if mid_quote_arr[i]<PrevTrough:
-                PrevTrough=mid_quote_arr[i]
-            elif mid_quote_arr[i]>=PrevTrough*(1+StpPct):
-                state=0
-        signal_arr[i]=state
-    return signal_arr
-
-def generate_cb_signal(order_book_tmp,ChnLen,StpPct,Filter=0,freq='100ms'):
-    """Generate Channel breakout signals on order book data, supposed on a signal day.
-
-    Parameters
-    ----------
-    order_book_tmp : TYPE
-        signal day order book data
-    ChnLen_l : TYPE, optional
-        long-horizon window. The default is pd.offsets.Second(30*10).
-    ChnLen_s : TYPE, optional
-        short-horizon winodw. The default is pd.offsets.Second(30*2).
-    b : TYPE, optional
-        filter The default is 0.005.
-    freq : TYPE, optional
-        DESCRIPTION. The default is '100ms'.
-
-    Returns
-    -------
-    signal_ts : TYPE
-        DESCRIPTION.
-
-    """
-    "compute ma"
-    idx_ts=order_book_tmp.index
-
-    rolling_max_ts=cal_rolling_max_midquote(order_book_tmp,ChnLen,freq)
-    v0=rolling_max_ts.index.get_loc(rolling_max_ts.first_valid_index())
-    rolling_min_ts=cal_rolling_min_midquote(order_book_tmp, ChnLen,freq)
-    v1=rolling_min_ts.index.get_loc(rolling_min_ts.first_valid_index())
-    
-    
-    wait_bar=max(v0,v1)
-    HH=np.array(rolling_max_ts)
-    LL=np.array(rolling_min_ts)
-    signal_arr=np.zeros(len(order_book_tmp))
-    mid_quote_arr=order_book_tmp['mid_quote'].to_numpy()
-    "get trading signals"
-    signal_arr=CB_StrategyCore(HH,LL,mid_quote_arr,signal_arr=signal_arr,StpPct=StpPct,Filter=Filter,WaitBar=wait_bar)
-    signal_ts=pd.Series(signal_arr)
-    signal_ts.index=idx_ts
-
-    return signal_ts
-
 
 def test_CB_performance(ticker_order_book,ChnLen=pd.offsets.Second(30*20),StpPct=0.005,init_capital=10**6,delay=None,base_freqstr='100ms',slpg=0):
     """test Channel Breakout peformance for one stock
@@ -225,7 +71,6 @@ def test_CB_performance(ticker_order_book,ChnLen=pd.offsets.Second(30*20),StpPct
         #adjust equity
         equity_df['equity']=equity_df['equity']+cum_pnl
         cum_pnl=cum_pnl+day_pnl
-        print(j,dt,cum_pnl)
         trade_res_list.append(trade_detail_df)
         equity_res_list.append(equity_df)
         
@@ -237,7 +82,7 @@ def test_CB_performance(ticker_order_book,ChnLen=pd.offsets.Second(30*20),StpPct
     tot_ret=tot_pnl/init_capital
     
     print('Final profit: ',cum_pnl)
-    print('Total return: ',np.round(tot_ret,4))
+    print('Final Total return: %.2f %%'%(np.round(tot_ret,4)*100))
     
     res={'trade_detail':tot_trade_df,'equity':tot_equity_df}
     res['total_return']=tot_ret
@@ -297,7 +142,7 @@ def grid_search_best_perf(ticker_order_book,param_list1=[10,20],param_list2=[0.0
 
 
 #%% load data
-ticker_list=['GOOG','YELP']
+ticker_list=['GOOG','YELP','QQQ']
 
 time_slice=('09:40','15:50')
 freq='100ms'
@@ -317,23 +162,23 @@ for ticker in ticker_list:
 
 
 #%%
-i=0
+
+i=1
 ticker=ticker_list[i]
 print("Choose stock: ",ticker)
 ticker_order_book=tot_order_book_dict[ticker]
 
 
-
+#%%
+ticker_order_book=ticker_order_book.loc[ticker_order_book.index<='2017-09-05']
 
 
 
 #%%
 
 
-
-
 #%%
-ChnLen_int_list=[10,20,30,40,50,60,70,80,90,100,110,120,180,240,300]
+ChnLen_int_list=[10,20,40,60,80,100,120,240,360,480]
 StpPct_list=[0.01,0.0075,0.005,0.0025,0.001,0.0005]
 
 gird_res=grid_search_best_perf(ticker_order_book,param_list1=ChnLen_int_list,param_list2=StpPct_list)
@@ -341,16 +186,15 @@ gird_res=grid_search_best_perf(ticker_order_book,param_list1=ChnLen_int_list,par
 
 
 #%%
-
+## QQQ 10,0.0025
 
 opt_len,opt_pct=gird_res['opt_params']
 
-ticker_res=test_CB_performance(ticker_order_book,ChnLen=pd.offsets.Second(30*opt_len),StpPct=opt_pct,init_capital=10**6,delay=None)
-
-
 #%%
-opt_len=20
-opt_pct=0.005
+##GOOG 20 ,0.005
+##Yelp 80
+opt_len=80
+opt_pct=0.0075
 ticker_res=test_CB_performance(ticker_order_book,ChnLen=pd.offsets.Second(30*opt_len),StpPct=opt_pct,init_capital=10**6,delay=None)
 
 
@@ -359,27 +203,42 @@ tot_trade_df=ticker_res['trade_detail']
 tot_equity_df=ticker_res['equity']
 net_equity=tot_equity_df['equity'].iloc[-1]
 
+res_df=Eval_strategy_Performance(tot_equity_df, tot_trade_df, eval_freq='5min')
+
+#%%
+tmp=tot_equity_df.between_time('15:45','15:50')
+tmp1=tot_trade_df['profit'].cumsum()
+tot_trade_df['equity']=tmp1+10**6
+
 
 #%%
 import matplotlib.pyplot as plt
 plt.style.use('seaborn')
 
-
+init_capital=10**6
 fig,ax=plt.subplots(figsize=(12,6))
+x=np.arange(len(tot_equity_df))
 
-
-plt.plot(tot_equity_df['equity'])
-plt.title("Equity curve on %s, opt ChnLen: %d minute, opt StpPct: %s"%(ticker,opt_len/2,opt_pct))
+tot_equity_df['mid_quote']=(tot_equity_df['bid_price1']+tot_equity_df['ask_price1'])/2
+tot_equity_df['benchmark']=tot_equity_df['mid_quote']/tot_equity_df['mid_quote'].iloc[0]*init_capital
+ax.plot(x,tot_equity_df['equity'].values,label='HFT')
+ax.plot(x,tot_equity_df['benchmark'].values,label='Buy and hold')
+ax.legend()
+ax.set_title("Equity curve on %s, opt ChnLen: %d minute, opt StpPct: %s"%(ticker,opt_len/2,opt_pct))
 text_str="Total return: %.2f %%"%(ticker_res['total_return']*100)
-ax.text(0.05,0.95,text_str,transform=ax.transAxes, fontsize=10, verticalalignment='top')
+ax.text(0.25,0.95,text_str,transform=ax.transAxes, fontsize=10, verticalalignment='top')
 plt.show()
+
+
+
+
 #%%
 
 
 "analysis delay"
-max_delay_num=11
-delay_list=[pd.offsets.Second(i) for i in range(1,max_delay_num)]
-delay_cost_list=[]
+
+delay_list=[pd.offsets.Milli(100),pd.offsets.Second(1),pd.offsets.Second(2),pd.offsets.Second(3),pd.offsets.Second(4),pd.offsets.Second(5)]
+delay_cost_list=[0]
 
 for delay in delay_list:
     ticker_res_delay=test_CB_performance(ticker_order_book,ChnLen=pd.offsets.Second(30*opt_len),StpPct=opt_pct,init_capital=10**6,delay=delay)
@@ -389,12 +248,12 @@ for delay in delay_list:
     delay_loss=net_equity_delay/net_equity-1
     delay_cost_list.append(delay_loss)
     
+#%%
+names=['0','100ms','1s','2s','3s','4s','5s']
 
-names=[d.freqstr for d in delay_list]
+delay_s=pd.Series(delay_cost_list,index=names)*100
 
-delay_s=pd.Series(delay_cost_list,index=names)
-
-delay_s.plot(title='cost of delay on %s'%(ticker))
+delay_s.plot(title='cost of delay on %s'%(ticker),xlabel='time of delay',ylabel='Cost of delay (%)')
 
 
 

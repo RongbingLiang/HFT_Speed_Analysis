@@ -74,18 +74,26 @@ def clean_order_book(order_book,time_slice=('09:40','15:50'),freq='100ms'):
 
 # This only runs if called from command line
 if __name__ == "__main__":
-    order_query1='https://data.onetick.com:443/omdwebapi/rest/?params={"context":"DEFAULT","query_type":"otq","otq":"124/720/otq/b17bd1a2-20ab-4859-8eaf-bc40d5f42a51.otq","enable_per_symbol_errors":"false","s":"20170824093000","e":"20170831160000","timezone":"America/New_York","response":"csv","format":["order=TIMESTAMP|BID_PRICE1|BID_PRICE2|BID_PRICE3|BID_PRICE4|BID_PRICE5|ASK_PRICE1|ASK_PRICE2|ASK_PRICE3|ASK_PRICE4|ASK_PRICE5|ASK_SIZE1|ASK_SIZE2|ASK_SIZE3|ASK_SIZE4|ASK_SIZE5|BID_SIZE1|BID_SIZE2|BID_SIZE3|BID_SIZE4|BID_SIZE5"]}'
-
     ticker1='GOOG'
-
     ticker2='YELP'
-    order_query2='https://data.onetick.com:443/omdwebapi/rest/?params={"context":"DEFAULT","query_type":"otq","otq":"124/720/otq/77613f64-6218-4322-9933-a471c711e0d0.otq","enable_per_symbol_errors":"false","s":"20170824093000","e":"20170831160000","timezone":"America/New_York","response":"csv","format":["order=TIMESTAMP|BID_PRICE1|BID_PRICE2|BID_PRICE3|BID_PRICE4|BID_PRICE5|ASK_PRICE1|ASK_PRICE2|ASK_PRICE3|ASK_PRICE4|ASK_PRICE5|ASK_SIZE1|ASK_SIZE2|ASK_SIZE3|ASK_SIZE4|ASK_SIZE5|BID_SIZE1|BID_SIZE2|BID_SIZE3|BID_SIZE4|BID_SIZE5"]}'
+    ticker3='QQQ'
+    
+    
+    order_query1='https://data.onetick.com:443/omdwebapi/rest/?params={"context":"DEFAULT","query_type":"otq","otq":"124/720/otq/b17bd1a2-20ab-4859-8eaf-bc40d5f42a51.otq","enable_per_symbol_errors":"false","s":"20170824093000","e":"20170924160000","timezone":"America/New_York","response":"csv","format":["order=TIMESTAMP|BID_PRICE1|BID_PRICE2|BID_PRICE3|BID_PRICE4|BID_PRICE5|ASK_PRICE1|ASK_PRICE2|ASK_PRICE3|ASK_PRICE4|ASK_PRICE5|ASK_SIZE1|ASK_SIZE2|ASK_SIZE3|ASK_SIZE4|ASK_SIZE5|BID_SIZE1|BID_SIZE2|BID_SIZE3|BID_SIZE4|BID_SIZE5"]}'
 
+    order_query2='https://data.onetick.com:443/omdwebapi/rest/?params={"context":"DEFAULT","query_type":"otq","otq":"124/720/otq/77613f64-6218-4322-9933-a471c711e0d0.otq","enable_per_symbol_errors":"false","s":"20170824093000","e":"20170924160000","timezone":"America/New_York","response":"csv","format":["order=TIMESTAMP|BID_PRICE1|BID_PRICE2|BID_PRICE3|BID_PRICE4|BID_PRICE5|ASK_PRICE1|ASK_PRICE2|ASK_PRICE3|ASK_PRICE4|ASK_PRICE5|ASK_SIZE1|ASK_SIZE2|ASK_SIZE3|ASK_SIZE4|ASK_SIZE5|BID_SIZE1|BID_SIZE2|BID_SIZE3|BID_SIZE4|BID_SIZE5"]}'
+    order_query3='https://data.onetick.com:443/omdwebapi/rest/?params={"context":"DEFAULT","query_type":"otq","otq":"124/720/otq/4a595553-f127-4d86-b099-0360101f14a1.otq","enable_per_symbol_errors":"false","s":"20170824093000","e":"20170924160000","timezone":"America/New_York","response":"csv","format":["order=TIMESTAMP|BID_PRICE1|BID_PRICE2|BID_PRICE3|BID_PRICE4|BID_PRICE5|ASK_PRICE1|ASK_PRICE2|ASK_PRICE3|ASK_PRICE4|ASK_PRICE5|ASK_SIZE1|ASK_SIZE2|ASK_SIZE3|ASK_SIZE4|ASK_SIZE5|BID_SIZE1|BID_SIZE2|BID_SIZE3|BID_SIZE4|BID_SIZE5"]}'
+    
     order_book1=get_onetick_data(order_query1,myapi)
     order_book2=get_onetick_data(order_query2,myapi)
 
+    order_book3=get_onetick_data(order_query3,myapi)
+    
 
     #%%
     order_book1.to_csv('%s_order_book.csv'%(ticker1))
-
+    
     order_book2.to_csv('%s_order_book.csv'%(ticker2))
+    
+    
+    order_book3.to_csv('%s_order_book.csv'%(ticker3))

@@ -40,8 +40,11 @@ def DD_relative(array):
 def Eval_strategy_Performance(equity_df,trade_detail_df,eval_freq='5min',base_freq='100ms'):
     base_freq=pd.tseries.frequencies.to_offset(base_freq)
 
+ 
+    tmp=equity_df.groupby(equity_df.index.date,group_keys=False,as_index=False)
+    'remove extra data'
+    equity_refreq_df=tmp.apply(lambda df: df.resample(eval_freq).last())
     
-    equity_refreq_df=equity_df.resample(eval_freq).last()
     trade_df=trade_detail_df
     profit_ts=trade_df['profit']
     
@@ -60,10 +63,12 @@ def Eval_strategy_Performance(equity_df,trade_detail_df,eval_freq='5min',base_fr
     'compounded return'
     equity_ts=equity_refreq_df['equity']
     annual_scaler=252*equity_ts.resample('D').count()[0]
-    log_rt = equity_ts.apply(np.log).diff(1)
+    log_rt = equity_ts.apply(np.log).diff(1).fillna(0)
     'simple return'
+    Net_Equity = equity_ts.iloc[-1]
+    Net_Profit = profit_ts.sum()
     rt=equity_ts.pct_change()
-    Total_Return = rt.sum()
+    Total_Return = Net_Profit/equity_ts.iloc[0]
 
     avg_ror = np.mean(log_rt)*annual_scaler
     avg_std = np.std(log_rt)*np.sqrt(annual_scaler)
@@ -83,8 +88,7 @@ def Eval_strategy_Performance(equity_df,trade_detail_df,eval_freq='5min',base_fr
     Total_Return_To_Conditional_Drawdown=Total_Return/Conditional_Drawdown
     
     
-    Net_Equity = equity_ts.iloc[-1]
-    Net_Profit = profit_ts.sum()
+
     Gross_Gain = profit_ts[profit_ts >= 0].sum()
     Gross_Loss = -profit_ts[profit_ts < 0].sum()
     Profit_Factor = Gross_Gain/Gross_Loss
