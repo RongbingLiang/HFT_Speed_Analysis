@@ -32,9 +32,6 @@ def grid_search(order_book, signal, *args):
 def main():
 
     df = pd.read_csv('Data/GOOG_order_book.csv', index_col=0, parse_dates=True)
-<<<<<<< HEAD
-    df = clean_order_book(df)
-=======
 
     # Downsample to smaller time periods if needed
     daily_groupby=df.resample('D')
@@ -44,7 +41,6 @@ def main():
     
     df = clean_order_book(df)
 
->>>>>>> 8e39b700ec22410cb78adfecc1107831b95eec83
     Signal = signal(df)
 
     ChnLen_l = pd.offsets.Second(30*160)
@@ -77,10 +73,5 @@ def main():
     # #print(res_df.loc['Net Equity'].iloc[0])
 
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> 8e39b700ec22410cb78adfecc1107831b95eec83
 if __name__ == "__main__":
     main()
