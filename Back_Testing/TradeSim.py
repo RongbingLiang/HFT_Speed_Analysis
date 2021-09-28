@@ -240,7 +240,9 @@ class DailyTradeSettle():
                     mkt_time=mkt_time+eval_freq
                     market_value_list.append([cur_time.floor('s'),equity_value])
                 
-                
+        if cur_time.floor('s')>mkt_time:
+            market_value_list.append([cur_time.floor('s'),equity_value])
+            
         trade_col=['entry_time','trade_size','entry_depth','sign','entry_price','exit_time','exit_depth','exit_price','profit','simple_ret']
         trade_detail_df=pd.DataFrame(trade_detail_list,columns=trade_col)
         equity_df=pd.DataFrame(market_value_list,columns=['Time','equity'])
