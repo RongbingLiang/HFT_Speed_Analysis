@@ -1,7 +1,7 @@
 class signal():
     def __init__(self, orderbook, base_freq='100ms'):
 
-        self._orderbook = orderbook
+        self._orderbook = orderbook['mid_quote'].to_frame()
         if 'ret' not in self._orderbook.columns:
             self._orderbook['ret'] = self._orderbook['mid_quote']
 
