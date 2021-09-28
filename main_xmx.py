@@ -37,17 +37,18 @@ def main():
 
     ChnLen_l = pd.offsets.Second(30*160)
     ChnLen_s = pd.offsets.Second(30*20)
-    b = 0.0001
-    param1 = [pd.offsets.Second(60*i) for i in [20,30]]
-    param2 = [pd.offsets.Second(60*i) for i in [60,80,100]]
+    b = 0
+    param1 = [pd.offsets.Second(30*i) for i in [20,30]]
+    param2 = [pd.offsets.Second(30*i) for i in [60,80,100]]
     param3 = [0, 0.0005, 0.001]
     param4 = [0.01, 0.02]
-    grid_search(df, Signal.gen_MA_signal, param1, param2, param3, param4)
+    # grid_search(df, Signal.gen_MA_signal, param1, param2, param3, param4)
 
     #exit()
 
 
     s = Signal.gen_MA_signal(ChnLen_s, ChnLen_l, b, 0.01)
+    print(s)
 
     dts = DailyTradeSettle(df)
     tradesim_res = dts.simple_tradesim(s)
