@@ -63,7 +63,7 @@ class signal():
 
         return rolling_min_ts
 
-    def gen_MA_signal(self, s, l, exit_threshold=None):
+    def gen_MA_signal(self, s, l, b, exit_threshold=None):
 
         MA_short = self._MA(s)
         MA_long = self._MA(l)
