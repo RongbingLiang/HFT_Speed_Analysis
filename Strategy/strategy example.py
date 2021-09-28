@@ -418,7 +418,8 @@ date_range=list(daily_groupby.groups.keys())
 
 #%% 
 "example: take one trading day"
-date_tmp=date_range[0]
+j=3
+date_tmp=date_range[j]
 order_book_tmp=daily_groupby.get_group(date_tmp)
 
 "trade rule params"
@@ -427,7 +428,7 @@ ChnLen_s=pd.offsets.Second(30*2)
 
 b=0.0005
 
-#%%
+
 
 "compute ma"
 base_data=pd.DataFrame()
@@ -440,8 +441,7 @@ t0=time.time()
 base_data['twma_s']=cal_time_weighted_MA(order_book_tmp, ChnLen_s,freq)
 
 print('cost time:' ,(time.time()-t0)/60)
-
-#%% 
+ 
 "get trading signals"
 
 signal_ts=base_data.apply(lambda df: ma_trading_rule(df,b),axis=1)
