@@ -31,6 +31,27 @@ def get_onetick_data(query,myapi):
 
 "load and clean order book data"
 def clean_order_book(order_book,time_slice=('09:40','15:50'),freq='100ms'):
+    """clean the order book data pulled from one ticker:
+        -remove data outside the time slice
+        -resample to given fixed frequency
+    note: resample will resulted in additional data on holiday, it won't change results, but need to removed for efficiency
+    
+    Parameters
+    ----------
+    order_book : TYPE
+        oneTick order book data.
+    time_slice : TYPE, optional
+        only include data bewteen the time slice. The default is ('09:40','15:50').
+    freq : TYPE, optional
+        frequency of the output order book data. The default is '100ms'.
+
+    Returns
+    -------
+    order_book_df : TYPE
+        fixed frequency order book data.
+        
+
+    """
 
     order_book=order_book.between_time(time_slice[0],time_slice[1]).copy()
  

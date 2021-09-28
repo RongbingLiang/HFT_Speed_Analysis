@@ -1,7 +1,5 @@
 import pandas as pd
-from tqdm.auto import tqdm
-tqdm.pandas()
-
+from tqdm import tqdm
 
 class signal():
     def __init__(self, orderbook, base_freq='100ms'):
@@ -65,7 +63,7 @@ class signal():
 
         return rolling_min_ts
 
-    def gen_MA_signal(self, s, l, b, exit_threshold):
+    def gen_MA_signal(self, s, l, exit_threshold=None):
 
         MA_short = self._MA(s)
         MA_long = self._MA(l)
@@ -131,7 +129,7 @@ class signal():
 
         return signal
 
-    def gen_MP_signal(self, s, l, b, exit_threshold):
+    def gen_MP_signal(self, s, l, b, exit_threshold=None):
 
         MP_short = self._MP(s)
         MP_long = self._MP(l)
@@ -197,7 +195,7 @@ class signal():
 
         return signal
 
-    def gen_SR_signal(self, l, b, exit_threshold):
+    def gen_SR_signal(self, l, b, exit_threshold=None):
 
         rolling_max_ts = self._MAX(l)
         rolling_min_ts = self._MIN(l)
