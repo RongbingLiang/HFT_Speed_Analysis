@@ -247,7 +247,7 @@ class DailyTradeSettle():
         trade_detail_df=pd.DataFrame(trade_detail_list,columns=trade_col)
         equity_df=pd.DataFrame(market_value_list,columns=['Time','equity'])
         equity_df.set_index('Time',inplace=True)
-        print("%s has %d number of trades."%(dt_list[0].date,len(trade_detail_df)))
+        #print("%s has %d number of trades."%(dt_list[0],len(trade_detail_df)))
         print('Total return: ',np.round(equity_value/capital-1,4))
         tradesim_res={'trade_detail':trade_detail_df,'equity':equity_df}
         #print('cost time:' ,(time.time()-t0)/60)
