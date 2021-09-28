@@ -209,10 +209,10 @@ class DailyTradeSettle():
                     bid_size_arr=bid_size_mat[i,:]
                     bid_price_arr=bid_price_mat[i,:]
                     fake_pnl=bid_price_arr[0]*trade_size-capital
-                    equity_value+=fake_pnl
+                    fake_equity_value=equity_value+fake_pnl
                     
                     mkt_time=mkt_time+eval_freq
-                    market_value_list.append([cur_time.floor('s'),equity_value])
+                    market_value_list.append([cur_time.floor('s'),fake_equity_value])
                 
 
             elif mkt_pos==-1:
@@ -235,10 +235,10 @@ class DailyTradeSettle():
                     ask_size_arr=ask_size_mat[i,:]
                     ask_price_arr=ask_price_mat[i,:]
                     fake_pnl=capital-ask_price_arr[0]*trade_size                 
-                    equity_value+=fake_pnl
+                    fake_equity_value=equity_value+fake_pnl
                     
                     mkt_time=mkt_time+eval_freq
-                    market_value_list.append([cur_time.floor('s'),equity_value])
+                    market_value_list.append([cur_time.floor('s'),fake_equity_value])
                 
         if cur_time.floor('s')>mkt_time:
             market_value_list.append([cur_time.floor('s'),equity_value])

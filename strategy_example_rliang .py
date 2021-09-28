@@ -211,7 +211,7 @@ def generate_cb_signal(order_book_tmp,ChnLen,StpPct,Filter=0,freq='100ms'):
     return signal_ts
 #%% 
 "example: take one trading day"
-j=0
+j=3
 date_tmp=date_range[j]
 order_book_tmp=daily_groupby.get_group(date_tmp)
 
@@ -227,6 +227,8 @@ b=0.0005
 
 #%%
 
+
+            
 
 
 #%%
@@ -255,7 +257,12 @@ print('inital capital+total profit: ',10**6+trade_detail_df.profit.sum())
 res_df=Eval_strategy_Performance(equity_df, trade_detail_df,eval_freq='5min')
 print(res_df)        
 
+#%%
+import matplotlib.pyplot as plt
+plt.style.use('seaborn')
 
+#plt.plot(tmp_ts)
+plt.plot(equity_df['equity'])
 
 
 #%%
@@ -288,10 +295,11 @@ for j,dt in enumerate(date_range):
     trade_detail_df=tradesim_res['trade_detail']
     equity_df=tradesim_res['equity']
     day_pnl=equity_df['equity'].iloc[-1]-equity_df['equity'].iloc[0]
+    print('day pnl: ',day_pnl)
     #adjust equity
     equity_df['equity']=equity_df['equity']+cum_pnl
     cum_pnl=cum_pnl+day_pnl
-
+    print(j,dt,cum_pnl)
     trade_res_list.append(trade_detail_df)
     equity_res_list.append(equity_df)
 
