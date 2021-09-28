@@ -90,8 +90,8 @@ class signal():
 
         rolling_max_ts = self._MAX(l)
         rolling_min_ts = self._MIN(l)
-        temp_signal = (self._orderbook['mid_quote'] > (1+b)*rolling_max_ts).astype(int) - (self._orderbook['mid_quote'] \
-                                                                                           < (1-b)*rolling_min_ts).astype(int)
+        temp_signal = (self._orderbook['mid_quote'] > (1+b)*rolling_max_ts.shift(-1)).astype(int) - (self._orderbook['mid_quote'] \
+                                                                                           < (1-b)*rolling_min_ts.shift(-1)).astype(int)
         signal = temp_signal.replace(to_replace=0, method='ffill')
 
         if exit_threshold is not None:
