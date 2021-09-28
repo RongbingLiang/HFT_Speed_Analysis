@@ -81,10 +81,10 @@ class signal():
         return temp_signal.replace(to_replace=0, method='ffill')
 
 
-Signal = signal(tot_order_book_dict['GOOG'])
-ChnLen_l=pd.offsets.Second(30*10)
-ChnLen_s=pd.offsets.Second(30*2)
+# Signal = signal(tot_order_book_dict['GOOG'])
+# ChnLen_l=pd.offsets.Second(30*10)
+# ChnLen_s=pd.offsets.Second(30*2)
 
-s = Signal.gen_SR_signal(ChnLen_s, 0.00001)
-print(s.sum(), s.shape)
-print(s.sum(), s.shape)
+# s = Signal.gen_SR_signal(ChnLen_s, 0.00001)
+# print(s.sum(), s.shape)
+# print(s.sum(), s.shape)
