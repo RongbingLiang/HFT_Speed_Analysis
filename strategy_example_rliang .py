@@ -224,15 +224,6 @@ ChnLen_s=pd.offsets.Second(30*2)
 ChnLen=pd.offsets.Second(30*10)
 StpPct=0.0001
 b=0.0005
-#%%
-
-base_data=pd.DataFrame()
-t0=time.time()
-base_data['rolling_max']=cal_rolling_max_midquote(order_book_tmp,ChnLen,freq)
-base_data['rolling_min']=cal_rolling_min_midquote(order_book_tmp, ChnLen,freq)
-
-
-print('cost time of signal generation:' ,(time.time()-t0)/60)
 
 #%%
 
@@ -247,7 +238,8 @@ signal_ts=generate_ma_signal(order_book_tmp,ChnLen_l, ChnLen_s,b,freq=freq)
 #%%
 "back testing"
 
-signal_ts=generate_cb_signal(order_book_tmp,pd.offsets.Second(30*10), StpPct=0.007)
+signal_ts=generate_cb_signal(order_book_tmp,pd.offsets.Second(30*10), StpPct=0.01)
+
 
 tradesim=DailyTradeSettle(order_book_tmp,init_capital=10**6,base_freqstr='100ms',delay=None,slpg=0)
 
@@ -266,13 +258,60 @@ print(res_df)
 
 
 
+#%%
 
 
+ChnLen=pd.offsets.Second(30*20)
+StpPct=0.005
+init_capital=10**6
+delay=None
+base_freqstr='100ms'
+slpg=0
+
+ticker=ticker_list[i]
+order_book=tot_order_book_dict[ticker]
+daily_groupby=order_book.groupby(order_book.index.floor('D'))
+
+date_range=list(daily_groupby.groups.keys())
+print('data date range: ',date_range)
+trade_res_list=[]
+equity_res_list=[]
+cum_pnl=0
+for j,dt in enumerate(date_range):
+    order_book_tmp=daily_groupby.get_group(dt)
+
+    signal_ts=generate_cb_signal(order_book_tmp,ChnLen, StpPct=StpPct)
+    tradesim=DailyTradeSettle(order_book_tmp,init_capital,base_freqstr=base_freqstr,delay=delay,slpg=slpg)
+
+    tradesim_res=tradesim.simple_tradesim(signal_ts,eval_freq=pd.offsets.Second(30))    
+    
+    trade_detail_df=tradesim_res['trade_detail']
+    equity_df=tradesim_res['equity']
+    day_pnl=equity_df['equity'].iloc[-1]-equity_df['equity'].iloc[0]
+    #adjust equity
+    equity_df['equity']=equity_df['equity']+cum_pnl
+    cum_pnl=cum_pnl+day_pnl
+
+    trade_res_list.append(trade_detail_df)
+    equity_res_list.append(equity_df)
 
 
+#%%
 
 
+#%%
+tot_trade_df=pd.concat(trade_res_list,axis=0)
 
+tot_equity_df=pd.concat(equity_res_list,axis=0)
+    
+tot_pnl=tot_trade_df['profit'].sum()
+tot_ret=tot_pnl/init_capital
 
+print('Final profit: ',cum_pnl)
+print('Total return: ',np.round(tot_ret,4))
 
+res={'trade_detail':tot_trade_df,'equity':tot_equity_df}
 
+res['total_return']=tot_ret
+
+#%%
