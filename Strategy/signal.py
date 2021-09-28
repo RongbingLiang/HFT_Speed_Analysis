@@ -1,5 +1,6 @@
 import pandas as pd
 from tqdm import tqdm
+from numba import jit
 
 class signal():
     def __init__(self, orderbook, base_freq='100ms'):
@@ -63,70 +64,15 @@ class signal():
 
         return rolling_min_ts
 
+
     def gen_MA_signal(self, s, l, b, exit_threshold=None):
 
         MA_short = self._MA(s)
         MA_long = self._MA(l)
         signal =  (MA_short>(1+b)*MA_long).astype(int) - (MA_short<(1-b)*MA_long).astype(int)
-
         # filter exit condition
         if exit_threshold is not None:
-            state = 0
-            temp_high = None
-            temp_low = None
-            for i in tqdm(range(len(signal))):
-                curr_signal = signal.iloc[i]
-                if curr_signal == -1:
-                    if state == 0 and temp_low == None:
-                        state = -1
-                        temp_low = self._orderbook.iloc[i]['mid_quote']
-                    elif state == 0 and temp_low != None:
-                        if temp_low > self._orderbook.iloc[i]['mid_quote']:
-                            temp_low = self._orderbook.iloc[i]['mid_quote']
-                            state = -1
-                        else:
-                            signal.iloc[i] = 0
-                    elif state == -1:
-                        if temp_low*(1+exit_threshold) <  self._orderbook.iloc[i]['mid_quote']:
-                            state = 0
-                            signal.iloc[i] = 0
-                        else:
-                            temp_low = min(temp_low, self._orderbook.iloc[i]['mid_quote'])
-                    # from 1 to -1
-                    else:
-                        temp_high = None
-                        temp_low = self._orderbook.iloc[i]['mid_quote']
-                        state = -1
-
-                elif curr_signal == 1:
-                    if state == 0 and temp_high == None :
-                        state = 1
-                        temp_high = self._orderbook.iloc[i]['mid_quote']
-
-                    elif state == 0 and temp_high != None:
-                        if temp_high < self._orderbook.iloc[i]['mid_quote']:
-                            temp_high = self._orderbook.iloc[i]['mid_quote']
-                            state = 1
-                        else:
-                            signal.iloc[i] = 0
-                    elif state == 1:
-                        if temp_high*(1-exit_threshold) > self._orderbook.iloc[i]['mid_quote']:
-                            state = 0
-                            signal.iloc[i] = 0
-                        else:
-                            temp_high = max(temp_high, self._orderbook.iloc[i]['mid_quote'])
-                    # from -1 to 1
-                    else:
-                        temp_low = None
-                        temp_high = self._orderbook.iloc[i]['mid_quote']
-                        state = 1
-
-
-                else:
-                    state = 0
-                    temp_high = 0
-                    temp_low = 0
-
+            signal.iloc[:] = self.filter_signal(signal.values, self._orderbook['mid_quote'].values, exit_threshold)
         return signal
 
     def gen_MP_signal(self, s, l, b, exit_threshold=None):
@@ -137,62 +83,7 @@ class signal():
 
         # filter exit condition
         if exit_threshold is not None:
-            state = 0
-            temp_high = None
-            temp_low = None
-            for i in tqdm(range(len(signal))):
-                curr_signal = signal.iloc[i]
-                if curr_signal == -1:
-                    if state == 0 and temp_low == None:
-                        state = -1
-                        temp_low = self._orderbook.iloc[i]['mid_quote']
-                    elif state == 0 and temp_low != None:
-                        if temp_low > self._orderbook.iloc[i]['mid_quote']:
-                            temp_low = self._orderbook.iloc[i]['mid_quote']
-                            state = -1
-                        else:
-                            signal.iloc[i] = 0
-                    elif state == -1:
-                        if temp_low*(1+exit_threshold) <  self._orderbook.iloc[i]['mid_quote']:
-                            state = 0
-                            signal.iloc[i] = 0
-                        else:
-                            temp_low = min(temp_low, self._orderbook.iloc[i]['mid_quote'])
-                    # from 1 to -1
-                    else:
-                        temp_high = None
-                        temp_low = self._orderbook.iloc[i]['mid_quote']
-                        state = -1
-
-                elif curr_signal == 1:
-                    if state == 0 and temp_high == None :
-                        state = 1
-                        temp_high = self._orderbook.iloc[i]['mid_quote']
-
-                    elif state == 0 and temp_high != None:
-                        if temp_high < self._orderbook.iloc[i]['mid_quote']:
-                            temp_high = self._orderbook.iloc[i]['mid_quote']
-                            state = 1
-                        else:
-                            signal.iloc[i] = 0
-                    elif state == 1:
-                        if temp_high*(1-exit_threshold) > self._orderbook.iloc[i]['mid_quote']:
-                            state = 0
-                            signal.iloc[i] = 0
-                        else:
-                            temp_high = max(temp_high, self._orderbook.iloc[i]['mid_quote'])
-                    # from -1 to 1
-                    else:
-                        temp_low = None
-                        temp_high = self._orderbook.iloc[i]['mid_quote']
-                        state = 1
-
-
-                else:
-                    state = 0
-                    temp_high = 0
-                    temp_low = 0
-
+            signal.iloc[:] = self.filter_signal(signal.values, self._orderbook['mid_quote'].values, exit_threshold)
         return signal
 
     def gen_SR_signal(self, l, b, exit_threshold=None):
@@ -203,65 +94,70 @@ class signal():
                                                                                            < (1-b)*rolling_min_ts).astype(int)
         signal = temp_signal.replace(to_replace=0, method='ffill')
 
-        # filter exit condition
         if exit_threshold is not None:
-            state = 0
-            temp_high = None
-            temp_low = None
-            for i in tqdm(range(len(signal))):
-                curr_signal = signal.iloc[i]
-                if curr_signal == -1:
-                    if state == 0 and temp_low == None:
-                        state = -1
-                        temp_low = self._orderbook.iloc[i]['mid_quote']
-                    elif state == 0 and temp_low != None:
-                        if temp_low > self._orderbook.iloc[i]['mid_quote']:
-                            temp_low = self._orderbook.iloc[i]['mid_quote']
-                            state = -1
-                        else:
-                            signal.iloc[i] = 0
-                    elif state == -1:
-                        if temp_low*(1+exit_threshold) <  self._orderbook.iloc[i]['mid_quote']:
-                            state = 0
-                            signal.iloc[i] = 0
-                        else:
-                            temp_low = min(temp_low, self._orderbook.iloc[i]['mid_quote'])
-                    # from 1 to -1
-                    else:
-                        temp_high = None
-                        temp_low = self._orderbook.iloc[i]['mid_quote']
-                        state = -1
-
-                elif curr_signal == 1:
-                    if state == 0 and temp_high == None :
-                        state = 1
-                        temp_high = self._orderbook.iloc[i]['mid_quote']
-
-                    elif state == 0 and temp_high != None:
-                        if temp_high < self._orderbook.iloc[i]['mid_quote']:
-                            temp_high = self._orderbook.iloc[i]['mid_quote']
-                            state = 1
-                        else:
-                            signal.iloc[i] = 0
-                    elif state == 1:
-                        if temp_high*(1-exit_threshold) > self._orderbook.iloc[i]['mid_quote']:
-                            state = 0
-                            signal.iloc[i] = 0
-                        else:
-                            temp_high = max(temp_high, self._orderbook.iloc[i]['mid_quote'])
-                    # from -1 to 1
-                    else:
-                        temp_low = None
-                        temp_high = self._orderbook.iloc[i]['mid_quote']
-                        state = 1
-
-
-                else:
-                    state = 0
-                    temp_high = 0
-                    temp_low = 0
-
+            signal.iloc[:] = self.filter_signal(signal.values, self._orderbook['mid_quote'].values, exit_threshold)
         return signal
+
+    @staticmethod
+    @jit(nopython=True)
+    def filter_signal(signal_arr, mid_quote_arr, exit_threshold):
+        state = 0
+        temp_high = None
+        temp_low = None
+        for i in range(len(signal_arr)):
+            curr_signal = signal_arr[i]
+            if curr_signal == -1:
+                if state == 0 and temp_low == None:
+                    state = -1
+                    temp_low = mid_quote_arr[i]
+                elif state == 0 and temp_low != None:
+                    if temp_low > mid_quote_arr[i]:
+                        temp_low = mid_quote_arr[i]
+                        state = -1
+                    else:
+                        signal_arr[i] = 0
+                elif state == -1:
+                    if temp_low*(1+exit_threshold) <  mid_quote_arr[i]:
+                        state = 0
+                        signal_arr[i] = 0
+                    else:
+                        temp_low = min(temp_low, mid_quote_arr[i])
+                # from 1 to -1
+                else:
+                    temp_high = None
+                    temp_low = mid_quote_arr[i]
+                    state = -1
+
+            elif curr_signal == 1:
+                if state == 0 and temp_high == None :
+                    state = 1
+                    temp_high = mid_quote_arr[i]
+
+                elif state == 0 and temp_high != None:
+                    if temp_high < mid_quote_arr[i]:
+                        temp_high = mid_quote_arr[i]
+                        state = 1
+                    else:
+                        signal_arr[i] = 0
+                elif state == 1:
+                    if temp_high*(1-exit_threshold) > mid_quote_arr[i]:
+                        state = 0
+                        signal_arr[i] = 0
+                    else:
+                        temp_high = max(temp_high, mid_quote_arr[i])
+                # from -1 to 1
+                else:
+                    temp_low = None
+                    temp_high = mid_quote_arr[i]
+                    state = 1
+
+
+            else:
+                state = 0
+                temp_high = 0
+                temp_low = 0
+
+        return signal_arr
 
 
 # Signal = signal(tot_order_book_dict['GOOG'])
