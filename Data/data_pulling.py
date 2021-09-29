@@ -72,6 +72,47 @@ def clean_order_book(order_book,time_slice=('09:40','15:50'),freq='100ms'):
     return order_book_df
 
 
+def summarize_order_book(tot_order_book_dict,ticker_list,depth=5):
+    
+    
+    cols=['Ticker','num quotes(M)','quotes/sec','avg(price)']      
+    for i in range(1,depth+1):
+        cols.extend(['avg(half_rl_spread%d)'%(i),'avg(dollar_volume%d)'%i])
+    tot_list=[]
+    
+    for i,ticker in enumerate(ticker_list):
+        ticker_order_book=tot_order_book_dict[ticker]
+        avg_price=ticker_order_book['mid_quote'].mean()
+        'get  bid-ask spread'
+        spread_list=[]
+        volume_list=[]
+        for j in range(1,depth+1):    
+            sp_ts=ticker_order_book['ask_price%d'%(j)]-ticker_order_book['bid_price%d'%(j)]
+            size_ts=ticker_order_book['ask_size%d'%(j)]+ticker_order_book['bid_size%d'%(j)]
+            rl_sp=sp_ts.mean()*10**4/avg_price
+            spread_list.append(round(rl_sp,2))
+            volume_list.append(round(size_ts.mean()*avg_price/2,1))
+        
+        
+
+        'total bid ask size and mid quote'
+    
+    
+        #quote_sec_mean=order_book_ex_df.resample('1s')['mid_quote'].count().mean()
+        day_num=len(np.unique(ticker_order_book.index.date))
+        quote_sec_mean=len(ticker_order_book)/(6*60*60*day_num)
+        num_quote=len(ticker_order_book)/10**6
+        
+        
+        
+        record=[ticker,round(num_quote,1),round(quote_sec_mean,2),round(avg_price,2)]
+        for j in range(depth):
+            record.extend([spread_list[j],volume_list[j]])
+            
+        tot_list.append(record)
+    ob_sm_df=pd.DataFrame(tot_list,columns=cols,index=ticker_list)
+    return ob_sm_df
+
 # This only runs if called from command line
 if __name__ == "__main__":
     ticker1='GOOG'

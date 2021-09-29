@@ -141,12 +141,25 @@ def grid_search_best_perf(ticker_order_book,param_list1=[10,20],param_list2=[0.0
     return opt_res
 
 
-#%% load data
+
+#%% config params
+
 ticker_list=['GOOG','YELP','QQQ']
 
 time_slice=('09:40','15:50')
 freq='100ms'
+init_capital=10**4
 
+opt_params_dict={'CB':{"GOOG":(20,0.005),'YELP':(80,0.0075),'QQQ':(10,0.0025)},
+                 
+                 
+                 }
+
+
+
+cb_params_dict=opt_params_dict['CB']
+
+#%% load data
 tot_order_book_dict={}
 for ticker in ticker_list:
     df=pd.read_csv('./Data/%s_order_book.csv'%(ticker))
@@ -161,6 +174,7 @@ for ticker in ticker_list:
 
 
 
+
 #%%
 
 i=1
@@ -169,10 +183,8 @@ print("Choose stock: ",ticker)
 ticker_order_book=tot_order_book_dict[ticker]
 
 
-#%%
-ticker_order_book=ticker_order_book.loc[ticker_order_book.index<='2017-09-05']
-
-
+opt_len,opt_pct=cb_params_dict[ticker]
+print("Optimal params: ",(opt_len,opt_pct))
 
 #%%
 
@@ -184,18 +196,18 @@ StpPct_list=[0.01,0.0075,0.005,0.0025,0.001,0.0005]
 gird_res=grid_search_best_perf(ticker_order_book,param_list1=ChnLen_int_list,param_list2=StpPct_list)
 
 
-
-#%%
-## QQQ 10,0.0025
-
 opt_len,opt_pct=gird_res['opt_params']
 
-#%%
+
+## QQQ 10,0.0025
+
 ##GOOG 20 ,0.005
 ##Yelp 80
-opt_len=80
-opt_pct=0.0075
-ticker_res=test_CB_performance(ticker_order_book,ChnLen=pd.offsets.Second(30*opt_len),StpPct=opt_pct,init_capital=10**6,delay=None)
+#%%
+
+tmp_capital=10**5
+t0=time.time()
+ticker_res=test_CB_performance(ticker_order_book,ChnLen=pd.offsets.Second(30*opt_len),StpPct=opt_pct,init_capital=tmp_capital,delay=None)
 
 
 
@@ -203,7 +215,13 @@ tot_trade_df=ticker_res['trade_detail']
 tot_equity_df=ticker_res['equity']
 net_equity=tot_equity_df['equity'].iloc[-1]
 
-res_df=Eval_strategy_Performance(tot_equity_df, tot_trade_df, eval_freq='5min')
+res_df2=Eval_strategy_Performance(tot_equity_df, tot_trade_df, eval_freq='5min')
+
+print('cost time: ',(time.time()-t0)/60)
+#%%
+
+tot_res_df=pd.concat([res_df,res_df2,res_df1],axis=1)
+
 
 #%%
 tmp=tot_equity_df.between_time('15:45','15:50')
@@ -282,59 +300,5 @@ delay_s.plot(title='cost of delay on %s'%(ticker),xlabel='time of delay',ylabel=
 
 
 
-
-
-
-
-
-
-
-
-
-
-#%%
-
-daily_groupby=ticker_order_book.groupby(ticker_order_book.index.floor('D'))
-
-date_range=list(daily_groupby.groups.keys())
-
-
-
-"example: take one trading day"
-j=3
-date_tmp=date_range[j]
-order_book_tmp=daily_groupby.get_group(date_tmp)
-
-"trade rule params"
-
-ChnLen_l=pd.offsets.Second(30*10)
-ChnLen_s=pd.offsets.Second(30*2)
-
-'channel breakout'
-ChnLen=pd.offsets.Second(30*10)
-StpPct=0.0001
-b=0.0005
-
-
-"back testing"
-
-signal_ts=generate_cb_signal(order_book_tmp,pd.offsets.Second(30*10), StpPct=0.01)
-
-
-tradesim=DailyTradeSettle(order_book_tmp,init_capital=10**6,base_freqstr='100ms',delay=None,slpg=0)
-
-tradesim_res=tradesim.simple_tradesim(signal_ts,eval_freq=pd.offsets.Second(30))
-
-trade_detail_df=tradesim_res['trade_detail']
-equity_df=tradesim_res['equity']
-
-print('final equity:',equity_df.iloc[-1])
-print('inital capital+total profit: ',10**6+trade_detail_df.profit.sum())
-#%%
-        
-res_df=Eval_strategy_Performance(equity_df, trade_detail_df,eval_freq='5min')
-print(res_df)        
-
-#%%
 
 

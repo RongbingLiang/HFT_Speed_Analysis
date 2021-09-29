@@ -206,7 +206,70 @@ def plot_equity_curve(tot_equity_df,ticker,opt_params,signal_name='HFT',ax=None,
 
     
     
+def get_full_delay_results(signal_name,signal_params_dict,signal_equity_dict,signal_res_df,delay_list,delay_str_list,ticker_list,tot_order_book_dict):
+
     
+    
+    delay_res_dict={}
+    delay_cost_df=pd.DataFrame()
+    print('Signal: ',signal_name)
+    for i,ticker in enumerate(ticker_list):
+    
+        print("Choose stock: ",ticker)
+        ticker_order_book=tot_order_book_dict[ticker]
+        
+        'get your optimal params'
+        opt_len,opt_pct=signal_params_dict[ticker]
+        print("Optimal params: ",(opt_len,opt_pct))
+        
+        'get your optimal delay'
+        no_delay_final_equity=signal_res_df.loc['Net Equity',ticker]
+        
+        
+        delay_cost_list=[0]
+        
+        delay_res_df=signal_res_df[ticker].to_frame()
+        
+        for j,delay in enumerate(delay_list[1:]):
+            
+            'change your straegy performance here'
+            if signal_name=='CB':
+                ticker_res_delay=test_CB_performance(ticker_order_book,ChnLen=pd.offsets.Second(30*opt_len),StpPct=opt_pct,init_capital=10**6,delay=delay)
+            elif signal_name=='SR':
+                pass
+            elif signal_name=='MA':
+                pass
+            
+            delay_str=delay_str_list[j+1]
+            print("Current delay: ",delay_str)
+            
+            delay_equity_df=ticker_res_delay['equity']
+            delay_equity_ts=delay_equity_df['equity']
+            
+            
+            signal_equity_dict[ticker]['equity_delay_%s'%(delay_str)]=delay_equity_ts
+            
+            
+            res_df=Eval_strategy_Performance(delay_equity_df,ticker_res_delay['trade_detail'])
+            res_df.rename(columns={'Value':'delay '+delay_str},inplace=True)
+    
+            delay_res_df=pd.concat([delay_res_df,res_df],axis=1)
+            
+            
+            net_equity_delay=delay_equity_ts.iloc[-1]
+            
+            delay_loss=net_equity_delay/no_delay_final_equity-1
+            delay_cost_list.append(delay_loss)
+            
+        delay_res_dict[ticker]=delay_res_df
+        delay_s=pd.Series(delay_cost_list,index=delay_str_list)*100
+        delay_cost_df[ticker]=delay_s
+        
+
+
+
+    delay_cost_df.index=delay_str_list
+    return delay_cost_df,delay_res_dict
 
 #%% config params
 
@@ -242,21 +305,7 @@ for ticker in ticker_list:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+ob_sm_df=summarize_order_book(tot_order_book_dict, ticker_list)
 
 
 
@@ -305,148 +354,36 @@ for i,ticker in enumerate(ticker_list):
 
 delay_list=[None,pd.offsets.Milli(100),pd.offsets.Second(1),pd.offsets.Second(2),pd.offsets.Second(3),pd.offsets.Second(4),pd.offsets.Second(5)]
 delay_str_list=['0','100ms','1s','2s','3s','4s','5s']
-delay_res_dict={}
-for i,ticker in enumerate(ticker_list):
-
-    print("Choose stock: ",ticker)
-    ticker_order_book=tot_order_book_dict[ticker]
-    
-    'get your optimal params'
-    opt_len,opt_pct=cb_params_dict[ticker]
-    print("Optimal params: ",(opt_len,opt_pct))
-    
-    'get your optimal delay'
-    no_delay_final_equity=cb_res_df.loc['Net Equity',ticker]
-    
-    
-    delay_cost_list=[0]
-    
-    delay_res_df=cb_res_df[ticker].to_frame()
-    
-    for j,delay in enumerate(delay_list[1:]):
-        
-        'change your straegy performance here'
-        if signal_name=='CB':
-            ticker_res_delay=test_CB_performance(ticker_order_book,ChnLen=pd.offsets.Second(30*opt_len),StpPct=opt_pct,init_capital=10**6,delay=delay)
-        
-        delay_str=delay_str_list[j]
-        print("Current delay: ",delay_str)
-        
-        delay_equity_df=ticker_res_delay['equity']
-        delay_equity_ts=delay_equity_df['equity']
-        
-        
-        cb_equity_dict[ticker]['equity_delay_%s'%(delay_str)]=delay_equity_ts
-        
-        
-        res_df=Eval_strategy_Performance(delay_equity_df,ticker_res_delay['trade_detail'])
-        res_df.rename(columns={'Value':'delay '+delay_str},inplace=True)
-
-        pd.concat([delay_res_df,res_df],axis=1)
-        
-        
-        net_equity_delay=delay_equity_ts.iloc[-1]
-        
-        delay_loss=net_equity_delay/no_delay_final_equity-1
-        delay_cost_list.append(delay_loss)
-        
-    delay_res_dict[ticker]=delay_res_df
-
-    
-#%%
 
 
-delay_s=pd.Series(delay_cost_list,index=names)*100
 
-delay_s.plot(title='cost of delay on %s'%(ticker),xlabel='time of delay',ylabel='Cost of delay (%)')
+cb_delay_cost_df,cb_delay_res_dict=get_full_delay_results(signal_name='CB',
+                                                          signal_params_dict=cb_params_dict,
+                                                          signal_equity_dict=cb_equity_dict,
+                                                          signal_res_df=cb_res_df,
+                                                          delay_list=delay_list,
+                                                          delay_str_list=delay_str_list,
+                                                          ticker_list=ticker_list,
+                                                          tot_order_book_dict=tot_order_book_dict)
+
+
+
 
 
 
 
 #%%
-delay_list=[None,pd.offsets.Milli(100),pd.offsets.Second(1),pd.offsets.Second(2),pd.offsets.Second(3),pd.offsets.Second(4),pd.offsets.Second(5)]
-delay_str_list=['0','100ms','1s','2s','3s','4s','5s']
 
-def get_full_delay_results(signal_name,signal_params_dict,signal_equity_dict,signal_res_df,delay_list,delay_str_list,ticker_list,tot_order_book_dict):
-
-    
-    
-    delay_res_dict={}
-    delay_cost_df=pd.DataFrame()
-    print('Signal: ',signal_name)
-    for i,ticker in enumerate(ticker_list):
-    
-        print("Choose stock: ",ticker)
-        ticker_order_book=tot_order_book_dict[ticker]
-        
-        'get your optimal params'
-        opt_len,opt_pct=signal_params_dict[ticker]
-        print("Optimal params: ",(opt_len,opt_pct))
-        
-        'get your optimal delay'
-        no_delay_final_equity=signal_res_df.loc['Net Equity',ticker]
-        
-        
-        delay_cost_list=[0]
-        
-        delay_res_df=signal_res_df[ticker].to_frame()
-        
-        for j,delay in enumerate(delay_list[1:]):
-            
-            'change your straegy performance here'
-            if signal_name=='CB':
-                ticker_res_delay=test_CB_performance(ticker_order_book,ChnLen=pd.offsets.Second(30*opt_len),StpPct=opt_pct,init_capital=10**6,delay=delay)
-            elif signal_name=='SR':
-                pass
-            elif signal_name=='MA':
-                pass
-            
-            delay_str=delay_str_list[j]
-            print("Current delay: ",delay_str)
-            
-            delay_equity_df=ticker_res_delay['equity']
-            delay_equity_ts=delay_equity_df['equity']
-            
-            
-            signal_equity_dict[ticker]['equity_delay_%s'%(delay_str)]=delay_equity_ts
-            
-            
-            res_df=Eval_strategy_Performance(delay_equity_df,ticker_res_delay['trade_detail'])
-            res_df.rename(columns={'Value':'delay '+delay_str},inplace=True)
-    
-            delay_res_df=pd.concat([delay_res_df,res_df],axis=1)
-            
-            
-            net_equity_delay=delay_equity_ts.iloc[-1]
-            
-            delay_loss=net_equity_delay/no_delay_final_equity-1
-            delay_cost_list.append(delay_loss)
-            
-        delay_res_dict[ticker]=delay_res_df
-        delay_s=pd.Series(delay_cost_list,index=names)*100
-        delay_cost_df[ticker]=delay_s
-        
+for ticker in ticker_list:
+    fig,ax=plt.subplots(figsize=(12,6))
+    tmp=cb_equity_dict[ticker].drop(columns=['mid_quote','pos_size','bid_price1','ask_price1'])
+    tmp.index=pd.RangeIndex(len(tmp))
+    tmp.plot(ax=ax,title=ticker)
+    plt.show()
 
 
 
-    delay_cost_df.index=delay_str_list
-    return delay_cost_df,delay_res_dict
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#%%
 
 
 
