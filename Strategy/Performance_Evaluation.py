@@ -141,45 +141,45 @@ def Eval_strategy_Performance(equity_df,trade_detail_df,eval_freq='5min',base_fr
     
     
 
-    res.append(['Annual Compounded Return ', round(avg_ror,4)])
-    res.append(['Annualized Std Dev ', round(avg_std,4)])    
-    res.append(['Worst Relative Drawdown ', round(Worst_Relative_Drawdown,4)])
-    res.append(['Average Relative Drawdown ', round(Avg_Relative_Drawdown,2)])
-    res.append(['Conditional Relative Drawdown ',round(Conditional_Drawdown,2)] )
+    res.append(['Annual Compounded Return', round(avg_ror,2)])
+    res.append(['Annualized Std Dev', round(avg_std,4)])    
+    res.append(['Worst Relative Drawdown', round(Worst_Relative_Drawdown,2)])
+    res.append(['Average Relative Drawdown', round(Avg_Relative_Drawdown,2)])
+    res.append(['Conditional Relative Drawdown',round(Conditional_Drawdown,2)] )
     
-    res.append(['Sharpe Ratio '   ,  round(Sharpe_Ratio,2)])
+    res.append(['Sharpe Ratio'   ,  round(Sharpe_Ratio,2)])
                 
-    res.append (['Sortino Ratio ' ,round(Sortino_Ratio,2)])
-    res.append(['Calmar Ratio '  ,round(Calmar_Ratio,2)])
-    res.append(['Total Return To Conditional Drawdown ' ,round(Total_Return_To_Conditional_Drawdown,2)] )
-    res.append(['Skewness '   , round(Skewness,2)]  )
+    res.append (['Sortino Ratio' ,round(Sortino_Ratio,2)])
+    res.append(['Calmar Ratio'  ,round(Calmar_Ratio,2)])
+    res.append(['Total Return To Conditional Drawdown' ,round(Total_Return_To_Conditional_Drawdown,2)] )
+    res.append(['Skewness'   , round(Skewness,2)]  )
     
-    res.append(['Gross Gain '   ,round(Gross_Gain,2)]  )
-    res.append(['Gross Loss '   ,round(Gross_Loss,2)])
-    res.append(['Profit Factor ', round(Profit_Factor,2)]  )
-    res.append(['Average Loser ' ,round(Avg_Loser,2)]  )
-    res.append(['Average Winner' ,round(Avg_Winner,2)])
+    res.append(['Gross Gain'   ,round(Gross_Gain,2)]  )
+    res.append(['Gross Loss'   ,round(Gross_Loss,2)])
+    res.append(['Profit Factor', round(Profit_Factor,2)]  )
+    res.append(['Average Loser(%)' ,round(Avg_Loser,2)]  )
+    res.append(['Average Winner(%)' ,round(Avg_Winner,2)])
     res.append(['Average Winner To Average Loser ',  
                   round(Avg_Winner_to_Avg_Loser,2)]  )
-    res.append(['Trade Count '       ,round(Trade_Count,2)])
-    res.append(['Long Trade Count '    ,round(Long_Trade_Count,2)]  )
-    res.append(['Short Trade Count '   ,round(Short_Trade_Count,2)]  )
+    res.append(['Trade Count'       ,round(Trade_Count,2)])
+    res.append(['Long Trade Count'    ,round(Long_Trade_Count,2)]  )
+    res.append(['Short Trade Count'   ,round(Short_Trade_Count,2)]  )
     
     res.append(['Average Trade Size',np.round(np.mean(Tradesize),1)])
     res.append(['Average Depth',np.round(trade_df['entry_depth'].mean())])
     
-    res.append(['Percent Winners '     ,round(Percent_Winners,2)] )
-    res.append(['Percent Losers '       ,round(Percent_Losers,2)] )
-    res.append(['Best Winner '       ,round(Best_Winner,2)] )
-    res.append(['Worst Loser '        ,round(Worst_Loser,2)] )
-    res.append(['Best Winner To Worst Loser '  
+    res.append(['Percent Winners(%) '     ,round(Percent_Winners,2)] )
+    res.append(['Percent Losers(%) '       ,round(Percent_Losers,2)] )
+    res.append(['Best Winner(%)'       ,round(Best_Winner,2)] )
+    res.append(['Worst Loser(%)'        ,round(Worst_Loser,2)] )
+    res.append(['Best Winner To Worst Loser'  
                    ,round(Best_Winner_To_Worst_Loser,2)] )
-    res.append(['Winners Losers Ratio '       ,round(Winner_Losers_Ratio,2)] )
+    res.append(['Winners Losers Ratio'       ,round(Winner_Losers_Ratio,2)] )
     
-    res.append(['Avg Bars in Trade '      ,round(Avg_Bars_In_Trade)] )
-    res.append(['Avg Bars in Winning Trade '  
+    res.append(['Avg Bars in Trade'      ,round(Avg_Bars_In_Trade)] )
+    res.append(['Avg Bars in Winning Trade'  
                    ,round(Avg_Bars_In_Win_Trade)] )
-    res.append(['Avg Bars in Losing Trade '  
+    res.append(['Avg Bars in Losing Trade'  
                    ,round(Avg_Bars_In_Lose_Trade)])
     
     res_df=pd.DataFrame(res,columns=['Performance Evaluation','Value'])
