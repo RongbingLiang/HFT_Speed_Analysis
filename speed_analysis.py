@@ -374,6 +374,9 @@ cb_delay_cost_df,cb_delay_res_dict=get_full_delay_results(signal_name='CB',
 
 #%%
 
+
+
+
 for ticker in ticker_list:
     fig,ax=plt.subplots(figsize=(12,6))
     tmp=cb_equity_dict[ticker].drop(columns=['mid_quote','pos_size','bid_price1','ask_price1'])
@@ -388,7 +391,77 @@ for ticker in ticker_list:
 
 
 
+cap_list=[10**3,10**4,10**5,10**6]
+cap_str_list=['1K','10K','100K','1M']
 
+
+impact_res_dict={}
+impact_cost_df=pd.DataFrame()
+
+for i,ticker in enumerate(ticker_list):
+
+    print("Choose stock: ",ticker)
+    ticker_order_book=tot_order_book_dict[ticker]
+    
+    'get your optimal params'
+    opt_len,opt_pct=cb_params_dict[ticker]
+    print("Optimal params: ",(opt_len,opt_pct))
+    
+
+    
+    cap_res_df=pd.DataFrame()
+    impact_cost_list=[]
+    for j,cap in enumerate(cap_list):
+        
+ 
+        ticker_res_cap=test_CB_performance(ticker_order_book,ChnLen=pd.offsets.Second(30*opt_len),StpPct=opt_pct,init_capital=cap,delay=None)
+
+        
+        cap_str=cap_str_list[j]
+        print("Current cap: ",cap_str)
+        
+        cap_equity_df=ticker_res_cap['equity']
+        cap_equity_ts=cap_equity_df['equity']
+        
+        
+        cb_equity_dict[ticker]['init_cap_%s'%(cap_str)]=cap_equity_ts
+        
+        
+        res_df=Eval_strategy_Performance(cap_equity_df,ticker_res_cap['trade_detail'])
+        res_df.rename(columns={'Value':'Capital '+cap_str},inplace=True)
+
+        cap_res_df=pd.concat([cap_res_df,res_df],axis=1)
+        
+        
+        net_equity_cap=cap_equity_ts.iloc[-1]
+        
+        
+        impact_cost_list.append(net_equity_cap/cap)
+        
+    impact_res_dict[ticker]=cap_res_df
+    impact_s=pd.Series(impact_cost_list,index=cap_str_list)
+    impact_cost_df[ticker]=impact_s
+    
+
+
+#%%
+
+cap_cost_df=impact_cost_df.copy()
+
+for i in range(len(impact_cost_df)):
+    cap_cost_df.iloc[i,:]=(cap_cost_df.iloc[i,:]/impact_cost_df.iloc[0,:]-1)*100
+
+print(cap_cost_df)
+
+#%%
+
+
+
+cb_cap_cost_df=cap_cost_df
+cb_cap_cost_df.plot(title='Channel-Breakout Strategy, cost of price impact on %s'%(','.join(ticker_list)),
+                      figsize=(12,6),
+                      xlabel='Trading Capital',
+                      ylabel='Cost of price impact (%)')
 
 
 
